@@ -3,7 +3,7 @@ import { collection, addDoc, getDocs } from 'https://www.gstatic.com/firebasejs/
 
 class RecipeAI {
     constructor() {
-        this.apiKey = 'AIzaSyA-LoIR46eXhwOQ2bfLHhyBhLLBPKgSUZ0';
+        this.apiKey = 'AIzaSyDJK3y2WY_Sgs0uPz4NZn9QccvSlDGKtSU';
     }
 
     async generateRecipe(ingredients, dietary = '', cuisine = '') {
