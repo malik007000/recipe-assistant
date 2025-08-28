@@ -1,5 +1,6 @@
-// Firebase Configuration
+// Firebase Configuration (No ES6 modules)
 const firebaseConfig = {
+    // Add your actual Firebase config here
     apiKey: "AIzaSyA-LoIR46eXhwOQ2bfLHhyBhLLBPKgSUZ0",
     authDomain: "recipe-assistant-ai.firebaseapp.com",
     projectId: "recipe-assistant-ai",
@@ -8,11 +9,6 @@ const firebaseConfig = {
     appId: "1:1091487234501:web:3ca0a9203cacdb2f82b3ac"
 };
 
-// Initialize Firebase
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-import { getFirestore } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+// Initialize Firebase (using CDN instead of imports)
+// We'll load Firebase from CDN in HTML
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-
-export { db };

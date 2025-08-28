@@ -6,12 +6,18 @@
     <title>Recipe Assistant AI</title>
     <link href="css/styles.css" rel="stylesheet">
     <link href="css/animations.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.js">
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    
+    <!-- Firebase CDN -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 </head>
 <body>
     <div id="app">
         <!-- Content will be built here -->
     </div>
+    
+    <!-- Load scripts in order -->
     <script src="js/firebase-config.js"></script>
     <script src="js/ai-functions.js"></script>
     <script src="js/app.js"></script>

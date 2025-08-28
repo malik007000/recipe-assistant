@@ -1,9 +1,6 @@
-import { db } from './firebase-config.js';
-import { collection, addDoc, getDocs } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
-
 class RecipeAI {
     constructor() {
-        this.apiKey = 'AIzaSyDJK3y2WY_Sgs0uPz4NZn9QccvSlDGKtSU';
+        this.apiKey = 'AIzaSyDJK3y2WY_Sgs0uPz4NZn9QccvSlDGKtSU'; 
     }
 
     async generateRecipe(ingredients, dietary = '', cuisine = '') {
@@ -28,7 +25,15 @@ class RecipeAI {
             });
 
             const data = await response.json();
-            return JSON.parse(data.candidates[0].content.parts[0].text);
+            const recipeText = data.candidates[0].content.parts[0].text;
+            
+            // Extract JSON from response
+            const jsonMatch = recipeText.match(/\{[\s\S]*\}/);
+            if (jsonMatch) {
+                return JSON.parse(jsonMatch[0]);
+            }
+            
+            return null;
         } catch (error) {
             console.error('AI Recipe Generation Error:', error);
             return null;
@@ -69,7 +74,12 @@ class RecipeAI {
 
     async saveRecipe(recipe) {
         try {
-            await addDoc(collection(db, 'recipes'), {
+            // Initialize Firestore if not already done
+            if (!window.db) {
+                window.db = firebase.firestore();
+            }
+            
+            await window.db.collection('recipes').add({
                 ...recipe,
                 createdAt: new Date(),
                 likes: 0
@@ -82,4 +92,5 @@ class RecipeAI {
     }
 }
 
-export { RecipeAI };
+// Make available globally
+window.RecipeAI = RecipeAI;
