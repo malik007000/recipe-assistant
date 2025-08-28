@@ -171,40 +171,113 @@
 
     <script>
         // Simple JavaScript without modules
-        function generateRecipe() {
-            const ingredients = document.getElementById('ingredients').value.trim();
-            
-            if (!ingredients) {
-                alert('Please enter some ingredients first!');
-                return;
-            }
+        async function generateRecipe() {
+    const ingredients = document.getElementById('ingredients').value.trim();
+    
+    if (!ingredients) {
+        alert('Please enter some ingredients first!');
+        return;
+    }
 
-            // Show loading
-            document.getElementById('loading').style.display = 'block';
-            document.getElementById('result').style.display = 'none';
+    // Show loading
+    document.getElementById('loading').style.display = 'block';
+    document.getElementById('result').style.display = 'none';
 
-            // Simulate API call (replace with actual Gemini API later)
-            setTimeout(() => {
-                document.getElementById('loading').style.display = 'none';
-                
-                // Sample recipe (replace with actual AI response)
-                const sampleRecipe = {
-                    title: `Delicious ${ingredients.split(',')[0].trim()} Recipe`,
-                    ingredients: ingredients.split(',').map(ing => ing.trim()),
-                    instructions: [
-                        'Heat oil in a large pan over medium heat',
-                        'Add ingredients and cook for 10-15 minutes',
-                        'Season with salt and pepper to taste',
-                        'Serve hot and enjoy!'
-                    ],
-                    prep_time: '15 minutes',
-                    cook_time: '20 minutes',
-                    servings: '4'
-                };
+    const dietary = document.getElementById('dietary').value;
+    const cuisine = document.getElementById('cuisine').value;
 
-                displayRecipe(sampleRecipe);
-            }, 2000);
+    try {
+        // Real Gemini AI API call
+        const prompt = `Create a detailed recipe using these ingredients: ${ingredients}. 
+        Dietary restrictions: ${dietary}. 
+        Cuisine preference: ${cuisine}. 
+        Format as JSON with: title, ingredients (array), instructions (array), prep_time, cook_time, servings.`;
+
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=YOUR_API_KEY_HERE`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                contents: [{
+                    parts: [{
+                        text: prompt
+                    }]
+                }]
+            })
+        });
+
+        const data = await response.json();
+        const recipeText = data.candidates[0].content.parts[0].text;
+        
+        // Extract JSON from response
+        const jsonMatch = recipeText.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+            const recipe = JSON.parse(jsonMatch[0]);
+            displayRecipe(recipe);
+        } else {
+            throw new Error('Could not parse recipe');
         }
+        
+    } catch (error) {
+        console.error('AI Error:', error);
+        alert('Sorry, there was an error generating your recipe. Please try again!');
+    }
+
+    document.getElementById('loading').style.display = 'none';
+}
+
+async function analyzeImage(file) {
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+        const base64 = e.target.result.split(',')[1];
+        
+        document.getElementById('loading').style.display = 'block';
+
+        try {
+            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro-vision:generateContent?key=YOUR_API_KEY_HERE`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    contents: [{
+                        parts: [
+                            { text: "Identify all food ingredients in this image. Return as comma-separated list." },
+                            {
+                                inline_data: {
+                                    mime_type: "image/jpeg",
+                                    data: base64
+                                }
+                            }
+                        ]
+                    }]
+                })
+            });
+
+            const data = await response.json();
+            const ingredients = data.candidates[0].content.parts[0].text;
+            
+            document.getElementById('ingredients').value = ingredients;
+            generateRecipe();
+            
+        } catch (error) {
+            console.error('Image Analysis Error:', error);
+            alert('Could not analyze image. Please try typing ingredients instead.');
+        }
+        
+        document.getElementById('loading').style.display = 'none';
+    };
+    reader.readAsDataURL(file);
+}
+
+// Add event listener for file input
+document.getElementById('imageInput').addEventListener('change', (e) => {
+    if (e.target.files[0]) {
+        analyzeImage(e.target.files[0]);
+    }
+});
+
 
         function displayRecipe(recipe) {
             const content = `
