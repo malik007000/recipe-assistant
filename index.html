@@ -4,6 +4,25 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Recipe Assistant AI</title>
+    <!-- Add Firebase Firestore CDN -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
+<script>
+// Initialize Firebase with YOUR config
+const firebaseConfig = {
+    apiKey: "AIzaSyA-LoIR46eXhwOQ2bfLHhyBhLLBPKgSUZ0",
+    authDomain: "recipe-assistant-ai.firebaseapp.com",
+    projectId: "recipe-assistant-ai",
+    storageBucket: "recipe-assistant-ai.firebasestorage.app",
+    messagingSenderId: "1091487234501",
+    appId: "1:1091487234501:web:4d3bbf77948b07b482b3ac"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+</script>
+
     <style>
         /* Inline CSS to ensure it loads */
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
@@ -271,6 +290,64 @@
 
     document.getElementById('loading').style.display = 'none';
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function saveRecipeToFirebase() {
+    if (!window.currentRecipe) {
+        alert('No recipe to save!');
+        return;
+    }
+    
+    try {
+        const recipeToSave = {
+            ...window.currentRecipe,
+            savedAt: new Date(),
+            userId: 'anonymous' // For now
+        };
+        
+        const docRef = await db.collection('savedRecipes').add(recipeToSave);
+        console.log('Recipe saved with ID: ', docRef.id);
+        alert('Recipe saved to cloud successfully! 🎉');
+        
+    } catch (error) {
+        console.error('Error saving recipe: ', error);
+        alert('Failed to save recipe. Using local storage instead.');
+        saveRecipeLocally(); // Fallback to local storage
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // Helper function for fallback recipes
 function createFallbackRecipe(ingredients, aiText) {
