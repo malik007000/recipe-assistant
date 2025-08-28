@@ -4,22 +4,248 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Recipe Assistant AI</title>
-    <link href="css/styles.css" rel="stylesheet">
-    <link href="css/animations.css" rel="stylesheet">
-    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
-    
-    <!-- Firebase CDN -->
-    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+    <style>
+        /* Inline CSS to ensure it loads */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        :root {
+            --primary: #2563EB;
+            --secondary: #64748B;
+            --background: #FAFAFA;
+            --surface: #FFFFFF;
+            --text: #1E293B;
+            --accent: #10B981;
+            --error: #EF4444;
+            --border-radius: 12px;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--background);
+            color: var(--text);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .header {
+            background: var(--surface);
+            box-shadow: var(--shadow);
+            padding: 16px 0;
+        }
+
+        .nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .hero {
+            text-align: center;
+            margin: 60px 0;
+        }
+
+        .hero h1 {
+            font-size: 3rem;
+            margin-bottom: 16px;
+            color: var(--text);
+        }
+
+        .hero p {
+            font-size: 1.2rem;
+            color: var(--secondary);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: var(--surface);
+            border-radius: var(--border-radius);
+            padding: 24px;
+            box-shadow: var(--shadow);
+            margin: 20px 0;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 24px;
+            border: none;
+            border-radius: var(--border-radius);
+            font-weight: 500;
+            cursor: pointer;
+            background: var(--primary);
+            color: white;
+            text-decoration: none;
+        }
+
+        .btn:hover {
+            background: #1D4ED8;
+            transform: translateY(-2px);
+        }
+
+        .input {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid #E2E8F0;
+            border-radius: var(--border-radius);
+            font-size: 16px;
+            margin: 8px 0;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 24px;
+            margin: 40px 0;
+        }
+    </style>
 </head>
 <body>
-    <div id="app">
-        <!-- Content will be built here -->
-    </div>
-    
-    <!-- Load scripts in order -->
-    <script src="js/firebase-config.js"></script>
-    <script src="js/ai-functions.js"></script>
-    <script src="js/app.js"></script>
+    <header class="header">
+        <nav class="nav container">
+            <div class="logo">Recipe Assistant AI</div>
+            <button class="btn">Saved Recipes</button>
+        </nav>
+    </header>
+
+    <main class="container">
+        <div class="hero">
+            <h1>AI-Powered Recipe Generator</h1>
+            <p>Transform your available ingredients into delicious meals with AI assistance</p>
+        </div>
+
+        <div class="grid">
+            <div class="card">
+                <h3 style="margin-bottom: 20px;">Enter Ingredients</h3>
+                <input type="text" class="input" id="ingredients" placeholder="e.g., chicken, tomatoes, basil, pasta">
+                <input type="text" class="input" id="dietary" placeholder="Dietary restrictions (optional)">
+                <select class="input" id="cuisine">
+                    <option value="">Any cuisine</option>
+                    <option value="italian">Italian</option>
+                    <option value="mexican">Mexican</option>
+                    <option value="asian">Asian</option>
+                    <option value="mediterranean">Mediterranean</option>
+                </select>
+                <button class="btn" onclick="generateRecipe()" style="width: 100%; margin-top: 12px;">
+                    🍳 Generate Recipe
+                </button>
+            </div>
+
+            <div class="card">
+                <h3 style="margin-bottom: 20px;">Or Upload Image</h3>
+                <div style="border: 2px dashed #E2E8F0; border-radius: var(--border-radius); padding: 40px; text-align: center;">
+                    <p style="color: var(--secondary);">📷 Click to upload ingredient photo</p>
+                    <input type="file" id="imageInput" accept="image/*" style="margin-top: 12px;">
+                </div>
+            </div>
+        </div>
+
+        <div id="result" class="card" style="display: none;">
+            <h2>Your Generated Recipe</h2>
+            <div id="recipeContent"></div>
+        </div>
+
+        <div id="loading" class="card" style="display: none; text-align: center;">
+            <p>🤖 AI is creating your perfect recipe...</p>
+        </div>
+    </main>
+
+    <script>
+        // Simple JavaScript without modules
+        function generateRecipe() {
+            const ingredients = document.getElementById('ingredients').value.trim();
+            
+            if (!ingredients) {
+                alert('Please enter some ingredients first!');
+                return;
+            }
+
+            // Show loading
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('result').style.display = 'none';
+
+            // Simulate API call (replace with actual Gemini API later)
+            setTimeout(() => {
+                document.getElementById('loading').style.display = 'none';
+                
+                // Sample recipe (replace with actual AI response)
+                const sampleRecipe = {
+                    title: `Delicious ${ingredients.split(',')[0].trim()} Recipe`,
+                    ingredients: ingredients.split(',').map(ing => ing.trim()),
+                    instructions: [
+                        'Heat oil in a large pan over medium heat',
+                        'Add ingredients and cook for 10-15 minutes',
+                        'Season with salt and pepper to taste',
+                        'Serve hot and enjoy!'
+                    ],
+                    prep_time: '15 minutes',
+                    cook_time: '20 minutes',
+                    servings: '4'
+                };
+
+                displayRecipe(sampleRecipe);
+            }, 2000);
+        }
+
+        function displayRecipe(recipe) {
+            const content = `
+                <h3>${recipe.title}</h3>
+                <p><strong>Prep Time:</strong> ${recipe.prep_time} | <strong>Cook Time:</strong> ${recipe.cook_time} | <strong>Servings:</strong> ${recipe.servings}</p>
+                
+                <h4 style="margin-top: 20px;">Ingredients:</h4>
+                <ul>
+                    ${recipe.ingredients.map(ing => `<li>${ing}</li>`).join('')}
+                </ul>
+                
+                <h4 style="margin-top: 20px;">Instructions:</h4>
+                <ol>
+                    ${recipe.instructions.map(step => `<li>${step}</li>`).join('')}
+                </ol>
+                
+                <button class="btn" style="margin-top: 20px;">💖 Save Recipe</button>
+            `;
+            
+            document.getElementById('recipeContent').innerHTML = content;
+            document.getElementById('result').style.display = 'block';
+        }
+
+        // Test if JavaScript is working
+        console.log('Recipe Assistant AI loaded successfully!');
+        
+        // Add some hover effects
+        document.addEventListener('DOMContentLoaded', function() {
+            const cards = document.querySelectorAll('.card');
+            cards.forEach(card => {
+                card.addEventListener('mouseenter', function() {
+                    this.style.transform = 'translateY(-4px)';
+                    this.style.boxShadow = '0 10px 25px -3px rgba(0, 0, 0, 0.1)';
+                });
+                
+                card.addEventListener('mouseleave', function() {
+                    this.style.transform = 'translateY(0)';
+                    this.style.boxShadow = 'var(--shadow)';
+                });
+            });
+        });
+    </script>
 </body>
 </html>
