@@ -5,23 +5,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Recipe Assistant AI</title>
     <!-- Add Firebase Firestore CDN -->
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 
-<script>
-// Initialize Firebase with YOUR config
-const firebaseConfig = {
-    apiKey: "AIzaSyA-LoIR46eXhwOQ2bfLHhyBhLLBPKgSUZ0",
-    authDomain: "recipe-assistant-ai.firebaseapp.com",
-    projectId: "recipe-assistant-ai",
-    storageBucket: "recipe-assistant-ai.firebasestorage.app",
-    messagingSenderId: "1091487234501",
-    appId: "1:1091487234501:web:4d3bbf77948b07b482b3ac"
-};
+    <script>
+    // Initialize Firebase with YOUR config
+    const firebaseConfig = {
+        apiKey: "AIzaSyA-LoIR46eXhwOQ2bfLHhyBhLLBPKgSUZ0",
+        authDomain: "recipe-assistant-ai.firebaseapp.com",
+        projectId: "recipe-assistant-ai",
+        storageBucket: "recipe-assistant-ai.firebasestorage.app",
+        messagingSenderId: "1091487234501",
+        appId: "1:1091487234501:web:4d3bbf77948b07b482b3ac"
+    };
 
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
-</script>
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    </script>
 
     <style>
         /* Inline CSS to ensure it loads */
@@ -114,6 +114,7 @@ const db = firebase.firestore();
             background: var(--primary);
             color: white;
             text-decoration: none;
+            transition: all 0.3s ease;
         }
 
         .btn:hover {
@@ -142,7 +143,7 @@ const db = firebase.firestore();
     <header class="header">
         <nav class="nav container">
             <div class="logo">Recipe Assistant AI</div>
-            <button class="btn">Saved Recipes</button>
+            <button class="btn" onclick="viewSavedRecipes()">Saved Recipes</button>
         </nav>
     </header>
 
@@ -189,247 +190,166 @@ const db = firebase.firestore();
     </main>
 
     <script>
-        // Simple JavaScript without modules
+        // Recipe generation function
         async function generateRecipe() {
-    const ingredients = document.getElementById('ingredients').value.trim();
-    
-    if (!ingredients) {
-        alert('Please enter some ingredients first!');
-        return;
-    }
-
-    // Show loading
-    document.getElementById('loading').style.display = 'block';
-    document.getElementById('result').style.display = 'none';
-
-    const dietary = document.getElementById('dietary').value;
-    const cuisine = document.getElementById('cuisine').value;
-
-    try {
-        // CORRECTED API KEY (put your real key here)
-        const API_KEY = "AIzaSyDJK3y2WY_Sgs0uPz4NZn9QccvSlDGKtSU";
-        
-        const prompt = `Create a detailed recipe using these ingredients: ${ingredients}. 
-        Dietary restrictions: ${dietary}. 
-        Cuisine preference: ${cuisine}. 
-        
-        Please respond with a JSON object containing:
-        {
-          "title": "Recipe name",
-          "ingredients": ["ingredient 1", "ingredient 2"],
-          "instructions": ["step 1", "step 2"],
-          "prep_time": "15 minutes",
-          "cook_time": "30 minutes",
-          "servings": "4"
-        }`;
-
-        // CORRECTED API ENDPOINT - removed /v1beta, using /v1
-            const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${API_KEY}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                contents: [{
-                    parts: [{
-                        text: prompt
-                    }]
-                }],
-                generationConfig: {
-                    temperature: 0.7,
-                    maxOutputTokens: 2048,
-                },
-                safetySettings: [
-                    {
-                        category: "HARM_CATEGORY_HARASSMENT",
-                        threshold: "BLOCK_MEDIUM_AND_ABOVE"
-                    }
-                ]
-            })
-        });
-
-        console.log('Response status:', response.status);
-        
-        if (!response.ok) {
-            const errorText = await response.text();
-            console.log('Error response:', errorText);
-            throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
-        }
-
-        const data = await response.json();
-        console.log('Full API Response:', data);
-        
-        // CORRECTED: Check response structure properly
-        if (data && data.candidates && data.candidates.length > 0 && data.candidates[0].content && data.candidates[0].content.parts) {
-            const recipeText = data.candidates[0].content.parts[0].text;
-            console.log('Recipe Text:', recipeText);
+            const ingredients = document.getElementById('ingredients').value.trim();
             
-            // Try to extract JSON from response
-            const jsonMatch = recipeText.match(/\{[\s\S]*\}/);
-            if (jsonMatch) {
-                try {
-                    const recipe = JSON.parse(jsonMatch[0]);
-                    displayRecipe(recipe);
-                } catch (parseError) {
-                    console.log('JSON parse error:', parseError);
-                    // Fallback: create simple recipe
-                    createFallbackRecipe(ingredients, recipeText);
+            if (!ingredients) {
+                alert('Please enter some ingredients first!');
+                return;
+            }
+
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('result').style.display = 'none';
+
+            const dietary = document.getElementById('dietary').value;
+            const cuisine = document.getElementById('cuisine').value;
+
+            try {
+                const API_KEY = "AIzaSyDJK3y2WY_Sgs0uPz4NZn9QccvSlDGKtSU";
+                
+                const prompt = `Create a detailed recipe using these ingredients: ${ingredients}. 
+                Dietary restrictions: ${dietary}. 
+                Cuisine preference: ${cuisine}. 
+                
+                Please respond with a JSON object containing:
+                {
+                  "title": "Recipe name",
+                  "ingredients": ["ingredient 1", "ingredient 2"],
+                  "instructions": ["step 1", "step 2"],
+                  "prep_time": "15 minutes",
+                  "cook_time": "30 minutes",
+                  "servings": "4"
+                }`;
+
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${API_KEY}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        contents: [{
+                            parts: [{
+                                text: prompt
+                            }]
+                        }],
+                        generationConfig: {
+                            temperature: 0.7,
+                            maxOutputTokens: 2048,
+                        }
+                    })
+                });
+
+                console.log('Response status:', response.status);
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.log('Error response:', errorText);
+                    throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
                 }
-            } else {
-                // No JSON found, create fallback recipe
-                createFallbackRecipe(ingredients, recipeText);
+
+                const data = await response.json();
+                console.log('Full API Response:', data);
+                
+                if (data && data.candidates && data.candidates.length > 0 && data.candidates[0].content && data.candidates[0].content.parts) {
+                    const recipeText = data.candidates[0].content.parts[0].text;
+                    console.log('Recipe Text:', recipeText);
+                    
+                    const jsonMatch = recipeText.match(/\{[\s\S]*\}/);
+                    if (jsonMatch) {
+                        try {
+                            const recipe = JSON.parse(jsonMatch[0]);
+                            displayRecipe(recipe);
+                        } catch (parseError) {
+                            console.log('JSON parse error:', parseError);
+                            createFallbackRecipe(ingredients, recipeText);
+                        }
+                    } else {
+                        createFallbackRecipe(ingredients, recipeText);
+                    }
+                } else {
+                    throw new Error('Unexpected API response structure');
+                }
+                
+            } catch (error) {
+                console.error('Detailed AI Error:', error);
+                alert(`Error generating recipe: ${error.message}\n\nCheck the browser console (F12) for details.`);
             }
-        } else {
-            throw new Error('Unexpected API response structure');
+
+            document.getElementById('loading').style.display = 'none';
         }
-        
-    } catch (error) {
-        console.error('Detailed AI Error:', error);
-        alert(`Error generating recipe: ${error.message}\n\nCheck the browser console (F12) for details.`);
-    }
 
-    document.getElementById('loading').style.display = 'none';
-}
+        // Image analysis function
+        async function analyzeImage(file) {
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                const base64 = e.target.result.split(',')[1];
+                
+                document.getElementById('loading').style.display = 'block';
 
+                try {
+                    const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=AIzaSyDJK3y2WY_Sgs0uPz4NZn9QccvSlDGKtSU`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            contents: [{
+                                parts: [
+                                    { text: "Identify all food ingredients in this image. Return as comma-separated list." },
+                                    {
+                                        inline_data: {
+                                            mime_type: "image/jpeg",
+                                            data: base64
+                                        }
+                                    }
+                                ]
+                            }]
+                        })
+                    });
 
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
 
-
-
-
-
-
-
-
-
-
-
-
-async function saveRecipeToFirebase() {
-    if (!window.currentRecipe) {
-        alert('No recipe to save!');
-        return;
-    }
-    
-    try {
-        const recipeToSave = {
-            ...window.currentRecipe,
-            savedAt: new Date(),
-            userId: 'anonymous' // For now
-        };
-        
-        const docRef = await db.collection('savedRecipes').add(recipeToSave);
-        console.log('Recipe saved with ID: ', docRef.id);
-        alert('Recipe saved to cloud successfully! 🎉');
-        
-    } catch (error) {
-        console.error('Error saving recipe: ', error);
-        alert('Failed to save recipe. Using local storage instead.');
-        saveRecipeLocally(); // Fallback to local storage
-    }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// Helper function for fallback recipes
-function createFallbackRecipe(ingredients, aiText) {
-    const recipe = {
-        title: `Recipe with ${ingredients.split(',')[0].trim()}`,
-        ingredients: ingredients.split(',').map(ing => ing.trim()),
-        instructions: [
-            "Based on AI suggestions:",
-            aiText || "Cook the ingredients together until done.",
-            "Season to taste and serve hot."
-        ],
-        prep_time: "15 minutes",
-        cook_time: "30 minutes",
-        servings: "4"
-    };
-    displayRecipe(recipe);
-}
-
-
-async function analyzeImage(file) {
-    const reader = new FileReader();
-    reader.onload = async (e) => {
-        const base64 = e.target.result.split(',')[1];
-        
-        document.getElementById('loading').style.display = 'block';
-
-        try {
-            // CORRECTED: Changed /v1beta/ to /v1/
-            const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=AIzaSyDJK3y2WY_Sgs0uPz4NZn9QccvSlDGKtSU`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    contents: [{
-                        parts: [
-                            { text: "Identify all food ingredients in this image. Return as comma-separated list." },
-                            {
-                                inline_data: {
-                                    mime_type: "image/jpeg",
-                                    data: base64
-                                }
-                            }
-                        ]
-                    }]
-                })
-            });
-
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-
-            const data = await response.json();
-            
-            // Add better error checking
-            if (data && data.candidates && data.candidates[0] && data.candidates[0].content) {
-                const ingredients = data.candidates[0].content.parts[0].text;
-                document.getElementById('ingredients').value = ingredients;
-                generateRecipe();
-            } else {
-                throw new Error('No ingredients detected in image');
-            }
-            
-        } catch (error) {
-            console.error('Image Analysis Error:', error);
-            alert('Could not analyze image. Please try typing ingredients instead.');
+                    const data = await response.json();
+                    
+                    if (data && data.candidates && data.candidates[0] && data.candidates[0].content) {
+                        const ingredients = data.candidates[0].content.parts[0].text;
+                        document.getElementById('ingredients').value = ingredients;
+                        generateRecipe();
+                    } else {
+                        throw new Error('No ingredients detected in image');
+                    }
+                    
+                } catch (error) {
+                    console.error('Image Analysis Error:', error);
+                    alert('Could not analyze image. Please try typing ingredients instead.');
+                }
+                
+                document.getElementById('loading').style.display = 'none';
+            };
+            reader.readAsDataURL(file);
         }
-        
-        document.getElementById('loading').style.display = 'none';
-    };
-    reader.readAsDataURL(file);
-}
 
+        // Helper function for fallback recipes
+        function createFallbackRecipe(ingredients, aiText) {
+            const recipe = {
+                title: `Recipe with ${ingredients.split(',')[0].trim()}`,
+                ingredients: ingredients.split(',').map(ing => ing.trim()),
+                instructions: [
+                    "Based on AI suggestions:",
+                    aiText || "Cook the ingredients together until done.",
+                    "Season to taste and serve hot."
+                ],
+                prep_time: "15 minutes",
+                cook_time: "30 minutes",
+                servings: "4"
+            };
+            displayRecipe(recipe);
+        }
 
-// Add event listener for file input
-document.getElementById('imageInput').addEventListener('change', (e) => {
-    if (e.target.files[0]) {
-        analyzeImage(e.target.files[0]);
-    }
-});
-
-
+        // Display recipe function
         function displayRecipe(recipe) {
             const content = `
                 <h3>${recipe.title}</h3>
@@ -445,17 +365,162 @@ document.getElementById('imageInput').addEventListener('change', (e) => {
                     ${recipe.instructions.map(step => `<li>${step}</li>`).join('')}
                 </ol>
                 
-                <button class="btn" style="margin-top: 20px;">💖 Save Recipe</button>
+                <button class="btn" onclick="saveRecipeToFirebase()" style="margin-top: 20px;">💖 Save Recipe</button>
+                <button class="btn" onclick="viewSavedRecipes()" style="margin-top: 20px; margin-left: 10px; background: var(--secondary);">📁 View Saved</button>
             `;
             
             document.getElementById('recipeContent').innerHTML = content;
             document.getElementById('result').style.display = 'block';
+            
+            // Store current recipe globally so we can save it
+            window.currentRecipe = recipe;
         }
+
+        // Firebase save function
+        async function saveRecipeToFirebase() {
+            if (!window.currentRecipe) {
+                alert('No recipe to save!');
+                return;
+            }
+            
+            try {
+                const recipeToSave = {
+                    ...window.currentRecipe,
+                    savedAt: new Date(),
+                    userId: 'anonymous'
+                };
+                
+                const docRef = await db.collection('savedRecipes').add(recipeToSave);
+                console.log('Recipe saved with ID: ', docRef.id);
+                alert('Recipe saved to cloud successfully! 🎉');
+                
+            } catch (error) {
+                console.error('Error saving recipe: ', error);
+                alert('Failed to save recipe. Using local storage instead.');
+                saveRecipeLocally();
+            }
+        }
+
+        // Local storage fallback function
+        function saveRecipeLocally() {
+            if (!window.currentRecipe) {
+                alert('No recipe to save!');
+                return;
+            }
+            
+            const savedRecipes = JSON.parse(localStorage.getItem('savedRecipes') || '[]');
+            const recipeToSave = {
+                ...window.currentRecipe,
+                savedAt: new Date().toISOString(),
+                id: Date.now()
+            };
+            
+            savedRecipes.push(recipeToSave);
+            localStorage.setItem('savedRecipes', JSON.stringify(savedRecipes));
+            alert('Recipe saved locally! 🎉');
+        }
+
+        // View saved recipes function
+        async function viewSavedRecipes() {
+            try {
+                const snapshot = await db.collection('savedRecipes').orderBy('savedAt', 'desc').get();
+                
+                if (snapshot.empty) {
+                    const localRecipes = JSON.parse(localStorage.getItem('savedRecipes') || '[]');
+                    if (localRecipes.length === 0) {
+                        alert('No saved recipes yet. Generate and save some recipes first!');
+                        return;
+                    }
+                    displaySavedRecipesList(localRecipes, 'local');
+                } else {
+                    const firebaseRecipes = [];
+                    snapshot.forEach(doc => {
+                        firebaseRecipes.push({ id: doc.id, ...doc.data() });
+                    });
+                    displaySavedRecipesList(firebaseRecipes, 'firebase');
+                }
+                
+            } catch (error) {
+                console.error('Error loading saved recipes:', error);
+                const localRecipes = JSON.parse(localStorage.getItem('savedRecipes') || '[]');
+                if (localRecipes.length === 0) {
+                    alert('No saved recipes found.');
+                    return;
+                }
+                displaySavedRecipesList(localRecipes, 'local');
+            }
+        }
+
+        function displaySavedRecipesList(recipes, source) {
+            let recipesHtml = `<h2>Your Saved Recipes (${recipes.length})</h2>`;
+            recipesHtml += '<div style="max-height: 400px; overflow-y: auto;">';
+            
+            recipes.forEach((recipe, index) => {
+                const saveDate = recipe.savedAt ? new Date(recipe.savedAt.seconds ? recipe.savedAt.seconds * 1000 : recipe.savedAt).toLocaleDateString() : 'Unknown date';
+                
+                recipesHtml += `
+                    <div style="border: 1px solid #E2E8F0; border-radius: 8px; padding: 16px; margin: 10px 0;">
+                        <h4>${recipe.title}</h4>
+                        <p><small>Saved: ${saveDate}</small></p>
+                        <p><small>Prep: ${recipe.prep_time} | Cook: ${recipe.cook_time} | Serves: ${recipe.servings}</small></p>
+                        <button class="btn" onclick="loadSavedRecipe(${index}, '${source}')" style="margin-right: 8px; background: var(--accent);">View Recipe</button>
+                        <button class="btn" onclick="deleteSavedRecipe('${recipe.id || index}', '${source}')" style="background: var(--error);">Delete</button>
+                    </div>
+                `;
+            });
+            
+            recipesHtml += '</div>';
+            recipesHtml += '<button class="btn" onclick="location.reload()" style="margin-top: 20px; background: var(--secondary);">🔙 Back to Generator</button>';
+            
+            document.getElementById('recipeContent').innerHTML = recipesHtml;
+            document.getElementById('result').style.display = 'block';
+            
+            window.savedRecipesList = recipes;
+            window.savedRecipesSource = source;
+        }
+
+        function loadSavedRecipe(index, source) {
+            const recipe = window.savedRecipesList[index];
+            if (recipe) {
+                displayRecipe(recipe);
+            }
+        }
+
+        async function deleteSavedRecipe(recipeId, source) {
+            if (!confirm('Are you sure you want to delete this recipe?')) {
+                return;
+            }
+            
+            try {
+                if (source === 'firebase') {
+                    await db.collection('savedRecipes').doc(recipeId).delete();
+                    alert('Recipe deleted from cloud successfully!');
+                } else {
+                    const savedRecipes = JSON.parse(localStorage.getItem('savedRecipes') || '[]');
+                    const updatedRecipes = savedRecipes.filter(recipe => recipe.id != recipeId);
+                    localStorage.setItem('savedRecipes', JSON.stringify(updatedRecipes));
+                    alert('Recipe deleted from local storage!');
+                }
+                
+                viewSavedRecipes();
+                
+            } catch (error) {
+                console.error('Error deleting recipe:', error);
+                alert('Failed to delete recipe.');
+            }
+        }
+
+        // Add event listener for file input
+        document.getElementById('imageInput').addEventListener('change', (e) => {
+            if (e.target.files[0]) {
+                analyzeImage(e.target.files[0]);
+            }
+        });
 
         // Test if JavaScript is working
         console.log('Recipe Assistant AI loaded successfully!');
         
-        // Add some hover effects
+        // Add hover effects
         document.addEventListener('DOMContentLoaded', function() {
             const cards = document.querySelectorAll('.card');
             cards.forEach(card => {
